@@ -186,7 +186,7 @@ class PriorDepthAnything(nn.Module):
         else:
             return masked_min, denom
     
-    def analyze_results(self, prior_depth, pred_depth, sparse_depth, log_dir, dir_name):
+    def analyze_results(self, rgb, prior_depth, pred_depth, sparse_depth, log_dir, dir_name):
         """
         We visualize depth prior here, (gt_depth or prior_depth may be stored in uint16). 
             1. If there is ground-truth depth, we visualize ground-truth. 
@@ -231,6 +231,16 @@ class PriorDepthAnything(nn.Module):
             os.path.join(log_dir, 'pred_depth.png'), 
             scale=scale, shift=shift
         )
+
+        im_array = rgb.detach().cpu().numpy()  # (3, 480, 640)
+        im_array = im_array[0]
+        im_array = np.transpose(im_array, (1, 2, 0))
+        print("After transpose:", im_array.shape)
+
+        path = os.path.join(log_dir, 'rgb_depth.png')
+        pil_img = Image.fromarray(im_array, mode='RGB')
+        pil_img.save(path)
+
         
         sparse_depth = sparse_depth.squeeze().cpu().numpy()
         log_img(
@@ -332,6 +342,6 @@ class PriorDepthAnything(nn.Module):
             parent = datetime.now().strftime("%Y-%m-%d %H:%M")
             log_dir = os.path.join(self.args.log_dir, parent)
             os.makedirs(log_dir, exist_ok=True)
-            self.analyze_results(prior_depth, pred_depth, sparse_depth, log_dir, dir_name)
+            self.analyze_results(rgb, prior_depth, pred_depth, sparse_depth, log_dir, dir_name)
         
         return pred_depth.squeeze()
